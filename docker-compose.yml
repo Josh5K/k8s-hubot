@@ -1,0 +1,44 @@
+version: '3'
+
+volumes:
+  redis_data_vol:
+    external: false
+
+services:
+
+  redis:
+    image: redis
+    container_name: clubs-waterboy-redis
+    command: ["redis-server"]
+    networks:
+      - redis-net
+    volumes:
+      - ./redis-vol:/data
+    stdin_open: true
+    networks:
+      overlay:
+        aliases:
+          - redis
+
+  hubot:
+    image: josh5k/k8s-hubot
+    build: '.'
+    networks:
+      - redis-net
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://clubs-waterboy-redis
+    env_file:
+      - .env
+    ports:
+      - 8080:8080
+    stdin_open: true
+    networks:
+      overlay:
+        aliases:
+          - hubot
+
+networks:
+  overlay:
+    driver: bridge
